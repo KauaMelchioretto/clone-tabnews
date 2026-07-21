@@ -1,24 +1,41 @@
-import database from "infra/database.js";
 import orchestrator from "tests/orchestrator";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
-  await database.query("drop schema public cascade; create schema public;");
+  await orchestrator.clearDatabase();
 });
 
-test("POST to /api/v1/migrations should return 200", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/migrations", {
-    method: "POST",
-  });
-  expect(response.status).toBe(201);
-  const responseBody = await response.json(Array);
-  expect(Array.isArray(responseBody)).toBe(true);
-  expect(responseBody.length).toBeGreaterThan(0);
+describe("POST /api/v1/migrations", () => {
+  describe("Anonymous user", () => {
+    describe("Running pending migrations", () => {
+      test("For the first time", async () => {
+        const response = await fetch(
+          "http://localhost:3000/api/v1/migrations",
+          {
+            method: "POST",
+          },
+        );
+        expect(response.status).toBe(201);
 
-  const retryResponse = await fetch("http://localhost:3000/api/v1/migrations", {
-    method: "POST",
+        const responseBody = await response.json();
+
+        expect(Array.isArray(responseBody)).toBe(true);
+        expect(responseBody.length).toBeGreaterThan(0);
+      });
+      test("For the second time", async () => {
+        const retryResponse = await fetch(
+          "http://localhost:3000/api/v1/migrations",
+          {
+            method: "POST",
+          },
+        );
+        expect(retryResponse.status).toBe(200);
+
+        const retryResponseBody = await retryResponse.json();
+
+        expect(Array.isArray(retryResponseBody)).toBe(true);
+        expect(retryResponseBody.length).toBe(0);
+      });
+    });
   });
-  expect(retryResponse.status).toBe(200);
-  const retryResponseBody = await retryResponse.json(Array);
-  expect(retryResponseBody.length).toBe(0);
 });
