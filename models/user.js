@@ -50,7 +50,7 @@ async function create(userInputValues) {
       WHERE
         LOWER(username) = LOWER($1)
       ;`,
-      values: [userInputValues.username],
+      values: [username],
     });
 
     if (results.rowCount > 0) {
